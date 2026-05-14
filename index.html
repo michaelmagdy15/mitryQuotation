@@ -1,0 +1,2052 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mitry Visuals — Quote Builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=DM+Sans:opsz,wght@9..40,300..700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --bg-soft: #111111;
+    --bg-card: #141414;
+    --line: #1f1f1f;
+    --line-strong: #2a2a2a;
+    --text: #f5f5f0;
+    --text-soft: #a8a8a3;
+    --text-muted: #6b6b6b;
+    --accent: #d4a574;
+    --accent-soft: rgba(212, 165, 116, 0.12);
+    --danger: #c4604f;
+    --serif: 'Fraunces', Georgia, serif;
+    --sans: 'DM Sans', system-ui, sans-serif;
+    --mono: 'JetBrains Mono', 'Courier New', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.5;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Subtle grain overlay for cinematic feel */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0.025;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* ───────── HEADER ───────── */
+  .app-header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: rgba(10, 10, 10, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--line);
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .brand-mark {
+    font-family: var(--serif);
+    font-size: 24px;
+    font-style: italic;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+  }
+  .brand-sub {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    padding-left: 14px;
+    border-left: 1px solid var(--line-strong);
+  }
+  .actions { display: flex; gap: 8px; align-items: center; }
+
+  button, .btn {
+    font-family: var(--sans);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    padding: 9px 16px;
+    border: 1px solid var(--line-strong);
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  button:hover, .btn:hover {
+    background: var(--bg-soft);
+    border-color: var(--text-muted);
+  }
+  .btn-primary {
+    background: var(--text);
+    color: var(--bg);
+    border-color: var(--text);
+    font-weight: 600;
+  }
+  .btn-primary:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--bg);
+  }
+  .btn-ghost {
+    border-color: transparent;
+    color: var(--text-soft);
+  }
+  .btn-ghost:hover {
+    color: var(--text);
+    border-color: var(--line);
+    background: transparent;
+  }
+  .btn-icon {
+    padding: 7px 9px;
+    color: var(--text-muted);
+  }
+  .btn-icon:hover {
+    color: var(--text);
+  }
+
+  /* ───────── MAIN LAYOUT ───────── */
+  .app-main {
+    display: grid;
+    grid-template-columns: minmax(340px, 1fr) minmax(380px, 1.15fr);
+    gap: 0;
+    min-height: calc(100vh - 65px);
+  }
+
+  @media (max-width: 1080px) {
+    .app-main { grid-template-columns: 1fr 1fr; }
+  }
+
+  @media (max-width: 860px) {
+    .app-main { grid-template-columns: 1fr; }
+    .preview-pane { border-left: 0 !important; border-top: 1px solid var(--line); }
+  }
+
+  /* ───────── FORM PANE ───────── */
+  .form-pane {
+    padding: 28px 28px 40px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    max-height: calc(100vh - 65px);
+    min-width: 0;
+  }
+
+  @media (max-width: 860px) {
+    .form-pane { max-height: none; padding: 20px 16px; }
+  }
+
+  .section {
+    margin-bottom: 36px;
+  }
+  .section-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--line);
+  }
+
+  .field-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  .field-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+  .field-full { grid-column: 1 / -1; }
+
+  @media (max-width: 600px) {
+    .field-grid, .field-grid.three { grid-template-columns: 1fr; }
+    .field-full { grid-column: 1; }
+  }
+
+  label {
+    display: block;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  input, textarea, select {
+    width: 100%;
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid var(--line-strong);
+    padding: 8px 0;
+    font-family: var(--sans);
+    font-size: 14px;
+    color: var(--text);
+    transition: border-color 0.15s ease;
+  }
+  input:focus, textarea:focus, select:focus {
+    outline: none;
+    border-bottom-color: var(--accent);
+  }
+  input::placeholder, textarea::placeholder {
+    color: var(--text-muted);
+    font-style: italic;
+  }
+  textarea {
+    resize: vertical;
+    min-height: 60px;
+    padding: 10px 0;
+  }
+  select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236b6b6b' stroke-width='1.2' fill='none'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 4px center;
+    padding-right: 22px;
+  }
+
+  /* ───────── SERVICE PICKER ───────── */
+  .service-picker {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 8px;
+  }
+  .service-chip {
+    border: 1px solid var(--line-strong);
+    padding: 14px 12px;
+    cursor: pointer;
+    background: var(--bg-soft);
+    transition: all 0.15s ease;
+    text-align: left;
+    border-radius: 2px;
+  }
+  .service-chip:hover {
+    border-color: var(--text-muted);
+  }
+  .service-chip.active {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
+  .service-chip-name {
+    font-family: var(--serif);
+    font-size: 14px;
+    font-style: italic;
+    margin-bottom: 2px;
+  }
+  .service-chip-meta {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+  }
+
+  /* ───────── LINE ITEMS ───────── */
+  .line-items {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .line-item {
+    display: grid;
+    grid-template-columns: 1fr 90px 110px 36px;
+    gap: 10px;
+    align-items: start;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .line-item:last-child { border-bottom: 0; }
+  .line-item textarea {
+    border-bottom: 0;
+    padding: 2px 0;
+    min-height: 22px;
+    font-size: 13px;
+    line-height: 1.4;
+    overflow: hidden;
+  }
+  .line-item .li-qty,
+  .line-item .li-rate {
+    font-family: var(--mono);
+    font-size: 13px;
+    border-bottom: 0;
+    padding: 2px 0;
+    text-align: right;
+  }
+  .li-remove {
+    background: transparent;
+    border: 0;
+    color: var(--text-muted);
+    padding: 4px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: color 0.15s;
+  }
+  .li-remove:hover { color: var(--danger); background: transparent; }
+
+  .add-line {
+    margin-top: 10px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    background: transparent;
+    border: 1px dashed var(--line-strong);
+    width: 100%;
+    padding: 10px;
+    cursor: pointer;
+    text-transform: uppercase;
+    border-radius: 2px;
+  }
+  .add-line:hover {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
+
+  /* ───────── TOTALS ROW (form) ───────── */
+  .totals-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--text-soft);
+  }
+  .totals-row.grand {
+    border-top: 1px solid var(--line-strong);
+    margin-top: 6px;
+    padding-top: 14px;
+    font-family: var(--serif);
+    font-size: 22px;
+    font-weight: 400;
+    color: var(--text);
+  }
+  .totals-row .num {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ───────── PREVIEW PANE ───────── */
+  .preview-pane {
+    background: var(--bg-soft);
+    border-left: 1px solid var(--line);
+    padding: 24px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    max-height: calc(100vh - 65px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 0;
+  }
+  .preview-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    align-self: stretch;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .preview-frame {
+    width: 100%;
+    max-width: 595px;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    margin-bottom: 24px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  /* ───────── PDF DOCUMENT STYLES (also drives preview) ───────── */
+  .quote-doc {
+    background: #0a0a0a;
+    color: #f5f5f0;
+    font-family: var(--sans);
+    width: 595px;       /* A4 width — JS scales this to fit the frame */
+    min-height: 842px;  /* A4 height */
+    padding: 50px 48px 80px; /* extra bottom padding for absolute footer */
+    position: relative;
+    box-sizing: border-box;
+    transform-origin: top left;
+    flex-shrink: 0;
+  }
+  .quote-doc .qd-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 38px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid #1f1f1f;
+  }
+  .quote-doc .qd-wordmark {
+    font-family: var(--serif);
+    font-size: 22px;
+    font-style: italic;
+    letter-spacing: -0.02em;
+  }
+  .quote-doc .qd-wordmark span {
+    display: block;
+    font-family: var(--mono);
+    font-size: 8px;
+    font-style: normal;
+    letter-spacing: 0.2em;
+    color: #6b6b6b;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+  .quote-doc .qd-meta {
+    text-align: right;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    color: #a8a8a3;
+    line-height: 1.7;
+  }
+  .quote-doc .qd-meta .qd-num {
+    color: #d4a574;
+    font-size: 11px;
+    margin-bottom: 4px;
+  }
+
+  .quote-doc .qd-title {
+    font-family: var(--serif);
+    font-size: 56px;
+    font-style: italic;
+    font-weight: 300;
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+    margin-bottom: 6px;
+  }
+  .quote-doc .qd-subtitle {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    color: #6b6b6b;
+    text-transform: uppercase;
+    margin-bottom: 32px;
+  }
+
+  .quote-doc .qd-parties {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    margin-bottom: 32px;
+  }
+  .quote-doc .qd-party-label {
+    font-family: var(--mono);
+    font-size: 8px;
+    letter-spacing: 0.2em;
+    color: #6b6b6b;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #1f1f1f;
+  }
+  .quote-doc .qd-party-name {
+    font-family: var(--serif);
+    font-size: 18px;
+    font-style: italic;
+    margin-bottom: 4px;
+  }
+  .quote-doc .qd-party-detail {
+    font-size: 11px;
+    color: #a8a8a3;
+    line-height: 1.6;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    min-width: 0;
+  }
+
+  .quote-doc .qd-project-block {
+    margin-bottom: 26px;
+    padding: 18px 20px;
+    background: #111111;
+    border-left: 2px solid #d4a574;
+  }
+  .quote-doc .qd-project-label {
+    font-family: var(--mono);
+    font-size: 8px;
+    letter-spacing: 0.2em;
+    color: #6b6b6b;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .quote-doc .qd-project-name {
+    font-family: var(--serif);
+    font-size: 20px;
+    font-style: italic;
+    margin-bottom: 6px;
+    line-height: 1.2;
+  }
+  .quote-doc .qd-project-desc {
+    font-size: 11px;
+    color: #a8a8a3;
+    line-height: 1.55;
+    overflow-wrap: break-word;
+    word-break: break-word;
+  }
+
+  .quote-doc .qd-items {
+    margin-bottom: 24px;
+  }
+  .quote-doc .qd-items-head {
+    display: grid;
+    grid-template-columns: 1fr 70px 90px;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid #2a2a2a;
+    font-family: var(--mono);
+    font-size: 8px;
+    letter-spacing: 0.2em;
+    color: #6b6b6b;
+    text-transform: uppercase;
+  }
+  .quote-doc .qd-items-head > div:nth-child(2),
+  .quote-doc .qd-items-head > div:nth-child(3) { text-align: right; }
+  .quote-doc .qd-item {
+    display: grid;
+    grid-template-columns: 1fr 70px 90px;
+    gap: 12px;
+    padding: 11px 0;
+    border-bottom: 1px solid #1a1a1a;
+    font-size: 11px;
+    line-height: 1.5;
+    min-width: 0;
+  }
+  .quote-doc .qd-item .qd-item-desc {
+    color: #f5f5f0;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    min-width: 0;
+  }
+  .quote-doc .qd-item .qd-item-qty,
+  .quote-doc .qd-item .qd-item-amt {
+    font-family: var(--mono);
+    text-align: right;
+    color: #a8a8a3;
+    font-variant-numeric: tabular-nums;
+  }
+  .quote-doc .qd-item .qd-item-amt { color: #f5f5f0; }
+
+  .quote-doc .qd-totals {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 26px;
+  }
+  .quote-doc .qd-totals-box {
+    width: 260px;
+  }
+  .quote-doc .qd-totals-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: #a8a8a3;
+  }
+  .quote-doc .qd-totals-row .val { font-variant-numeric: tabular-nums; color: #f5f5f0; }
+  .quote-doc .qd-totals-row.grand {
+    border-top: 1px solid #2a2a2a;
+    padding-top: 14px;
+    margin-top: 8px;
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 24px;
+    color: #f5f5f0;
+  }
+  .quote-doc .qd-totals-row.grand .val {
+    font-family: var(--serif);
+    color: #d4a574;
+  }
+
+  .quote-doc .qd-terms {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 24px;
+    padding-top: 18px;
+    border-top: 1px solid #1f1f1f;
+  }
+  .quote-doc .qd-terms-block .qd-terms-label {
+    font-family: var(--mono);
+    font-size: 8px;
+    letter-spacing: 0.2em;
+    color: #6b6b6b;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .quote-doc .qd-terms-block .qd-terms-val {
+    font-size: 11px;
+    color: #f5f5f0;
+    line-height: 1.5;
+  }
+
+  .quote-doc .qd-closing {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 14px;
+    color: #a8a8a3;
+    line-height: 1.5;
+    margin: 16px 0 24px;
+    padding-left: 14px;
+    border-left: 2px solid #2a2a2a;
+  }
+
+  .quote-doc .qd-footer {
+    position: absolute;
+    left: 48px;
+    right: 48px;
+    bottom: 28px;
+    padding-top: 14px;
+    border-top: 1px solid #1f1f1f;
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--mono);
+    font-size: 8px;
+    letter-spacing: 0.15em;
+    color: #6b6b6b;
+    text-transform: uppercase;
+  }
+  .quote-doc .qd-footer span { color: #a8a8a3; }
+
+  /* ───────── DIALOG ───────── */
+  .dialog-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    z-index: 100;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .dialog-backdrop.open { display: flex; }
+  .dialog {
+    background: var(--bg-card);
+    border: 1px solid var(--line-strong);
+    max-width: 480px;
+    width: 100%;
+    padding: 28px;
+    border-radius: 4px;
+  }
+  .dialog h3 {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 22px;
+    font-weight: 400;
+    margin-bottom: 18px;
+  }
+  .saved-list {
+    max-height: 320px;
+    overflow-y: auto;
+    margin-bottom: 16px;
+  }
+  .saved-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line);
+    gap: 12px;
+  }
+  .saved-row-info { flex: 1; min-width: 0; }
+  .saved-row-name {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 15px;
+    margin-bottom: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .saved-row-meta {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 0.08em;
+  }
+  .saved-empty {
+    text-align: center;
+    padding: 32px 0;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+
+  /* ───────── TOAST ───────── */
+  .toast {
+    position: fixed;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--text);
+    color: var(--bg);
+    padding: 12px 20px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border-radius: 2px;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.25s ease;
+    z-index: 200;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* Scrollbars */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+  /* Currency toggle */
+  .currency-toggle {
+    display: inline-flex;
+    border: 1px solid var(--line-strong);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .currency-toggle button {
+    border: 0;
+    padding: 7px 12px;
+    background: transparent;
+    color: var(--text-muted);
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    cursor: pointer;
+  }
+  .currency-toggle button.active {
+    background: var(--text);
+    color: var(--bg);
+  }
+
+  .help-tip {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-style: italic;
+    margin-top: 6px;
+  }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="brand">
+    <div class="brand-mark">Mitry Visuals</div>
+    <div class="brand-sub">Quote Builder</div>
+  </div>
+  <div class="actions">
+    <button class="btn-ghost" id="btn-load">Saved Quotes</button>
+    <button class="btn-ghost" id="btn-save">Save</button>
+    <button class="btn-ghost" id="btn-reset">Reset</button>
+    <button class="btn-primary" id="btn-pdf">Download PDF</button>
+  </div>
+</header>
+
+<main class="app-main">
+
+  <!-- FORM PANE -->
+  <section class="form-pane">
+
+    <!-- Service template -->
+    <div class="section">
+      <div class="section-label">Service Template</div>
+      <div class="service-picker" id="service-picker"></div>
+    </div>
+
+    <!-- Project -->
+    <div class="section">
+      <div class="section-label">Project</div>
+      <div class="field-grid">
+        <div class="field-full">
+          <label>Project Name</label>
+          <input id="f-project-name" placeholder="e.g. Brand Film for ACME Co.">
+        </div>
+        <div class="field-full">
+          <label>Brief / Scope Description</label>
+          <textarea id="f-project-desc" placeholder="Short description of what's being delivered…"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Client -->
+    <div class="section">
+      <div class="section-label">Client</div>
+      <div class="field-grid">
+        <div>
+          <label>Contact Name</label>
+          <input id="f-client-name" placeholder="Sam Mohamed">
+        </div>
+        <div>
+          <label>Company</label>
+          <input id="f-client-company" placeholder="Optional">
+        </div>
+        <div class="field-full">
+          <label>Email / Contact</label>
+          <input id="f-client-email" placeholder="client@email.com">
+        </div>
+      </div>
+    </div>
+
+    <!-- Quote metadata -->
+    <div class="section">
+      <div class="section-label">Quote Details</div>
+      <div class="field-grid three">
+        <div>
+          <label>Quote Number</label>
+          <input id="f-quote-num" placeholder="MV-2026-001">
+        </div>
+        <div>
+          <label>Date</label>
+          <input id="f-date" type="date">
+        </div>
+        <div>
+          <label>Valid Until</label>
+          <input id="f-valid" type="date">
+        </div>
+      </div>
+      <div style="margin-top: 14px; display: flex; align-items: center; gap: 16px;">
+        <label style="margin: 0;">Currency</label>
+        <div class="currency-toggle" id="currency-toggle">
+          <button data-cur="EGP" class="active">EGP</button>
+          <button data-cur="USD">USD</button>
+          <button data-cur="EUR">EUR</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Line items -->
+    <div class="section">
+      <div class="section-label">Line Items</div>
+      <div class="line-items" id="line-items"></div>
+      <button class="add-line" id="btn-add-line">+ Add Line Item</button>
+    </div>
+
+    <!-- Adjustments -->
+    <div class="section">
+      <div class="section-label">Adjustments</div>
+      <div class="field-grid">
+        <div>
+          <label>Discount (%)</label>
+          <input id="f-discount" type="number" min="0" max="100" step="0.5" value="0">
+        </div>
+        <div>
+          <label>Tax / VAT (%)</label>
+          <input id="f-tax" type="number" min="0" max="100" step="0.5" value="0">
+        </div>
+      </div>
+      <div class="totals-row"><span>Subtotal</span><span class="num" id="t-subtotal">0</span></div>
+      <div class="totals-row" id="row-discount" style="display:none;"><span>Discount</span><span class="num" id="t-discount">0</span></div>
+      <div class="totals-row" id="row-tax" style="display:none;"><span>Tax / VAT</span><span class="num" id="t-tax">0</span></div>
+      <div class="totals-row grand"><span>Total</span><span class="num" id="t-grand">0</span></div>
+    </div>
+
+    <!-- Terms -->
+    <div class="section">
+      <div class="section-label">Terms</div>
+      <div class="field-grid">
+        <div>
+          <label>Timeline</label>
+          <input id="f-timeline" placeholder="e.g. 3–4 weeks from kickoff">
+        </div>
+        <div>
+          <label>Payment Terms</label>
+          <select id="f-payment">
+            <option value="50/50 — 50% upfront, 50% on delivery">50/50 — 50% upfront, 50% on delivery</option>
+            <option value="30/30/40 — staged payments across project milestones">30/30/40 — staged payments</option>
+            <option value="100% upfront">100% upfront</option>
+            <option value="Net 15 days after delivery">Net 15 days after delivery</option>
+            <option value="Net 30 days after delivery">Net 30 days after delivery</option>
+            <option value="Custom — see notes">Custom — see notes</option>
+          </select>
+        </div>
+        <div class="field-full">
+          <label>Closing Note (optional)</label>
+          <textarea id="f-closing" placeholder="A short note to the client. Leave blank to use default."></textarea>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- PREVIEW PANE -->
+  <aside class="preview-pane">
+    <div class="preview-label">
+      <span>PDF Preview</span>
+      <span id="preview-status">Auto-updating</span>
+    </div>
+    <div class="preview-frame">
+      <div class="quote-doc" id="quote-doc">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+  </aside>
+
+</main>
+
+<!-- SAVED QUOTES DIALOG -->
+<div class="dialog-backdrop" id="dlg-saved">
+  <div class="dialog">
+    <h3>Saved Quotes</h3>
+    <div class="saved-list" id="saved-list"></div>
+    <div style="display: flex; justify-content: flex-end; gap: 8px;">
+      <button id="dlg-close">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* =========================================================
+   SERVICE TEMPLATES — preloaded scope for each service type
+   Rates are starting points; everything is editable per quote
+   ========================================================= */
+const SERVICE_TEMPLATES = {
+  web72: {
+    name: 'Website in 72 Hours',
+    meta: 'From $300 · 72hr',
+    currency: 'USD',
+    timeline: '72 hours from project kickoff',
+    closing: 'Excited to get this live for you. Should be ready within 72 hours of kickoff.',
+    items: [
+      {
+        desc: 'Website in 72 Hours — complete package. Includes: custom UI/UX design, fully responsive mobile-first build, SEO-optimized structure, contact form & analytics integration, unlimited revisions until you love it, and delivery in 72 hours or less. Stack: React, HTML/CSS, Formspree, Vercel.',
+        qty: 1,
+        rate: 300
+      }
+    ]
+  },
+  appdev: {
+    name: 'Full App Development',
+    meta: 'From $1,500',
+    currency: 'USD',
+    timeline: '4–8 weeks depending on scope',
+    closing: 'Looking forward to building this together. Let\'s schedule a kickoff call to walk through the full scope.',
+    items: [
+      {
+        desc: 'Full App Development — end-to-end web/mobile application. Includes: React or React Native frontend, custom backend & REST API, user authentication & roles, database design & management, cloud deployment (GCP / Vercel), and post-launch support. Stack: React, Node.js, Firebase, Docker.',
+        qty: 1,
+        rate: 1500
+      }
+    ]
+  },
+  saas: {
+    name: 'SaaS Development',
+    meta: 'From $3,000',
+    currency: 'USD',
+    timeline: '8–12 weeks for MVP',
+    closing: 'Ready to build something scalable. Excited to dig in once we lock the spec.',
+    items: [
+      {
+        desc: 'SaaS Development — full-stack SaaS product built from scratch. Includes: multi-tenant SaaS architecture, Stripe / billing integration, admin panel & user management, analytics & usage dashboards, CI/CD pipeline & Docker deployment, scalable on Google Cloud Run. Stack: React, TypeScript, Firebase, GCP, Stripe.',
+        qty: 1,
+        rate: 3000
+      }
+    ]
+  },
+  vfx: {
+    name: 'Visual Effects',
+    meta: 'VFX · Compositing',
+    currency: 'EGP',
+    timeline: '3–4 weeks from project kickoff',
+    closing: 'Excited to bring this one to life. Let me know if anything needs adjusting.',
+    items: [
+      { desc: 'Pre-production & VFX breakdown', qty: 1, rate: 4000 },
+      { desc: 'Rotoscoping & matte preparation', qty: 1, rate: 6000 },
+      { desc: '3D tracking & camera solve', qty: 1, rate: 5000 },
+      { desc: 'CGI integration & compositing', qty: 1, rate: 12000 },
+      { desc: 'Cleanup, paint-out & color matching', qty: 1, rate: 5000 },
+      { desc: 'Final color grading & delivery (incl. 2 rounds of revisions)', qty: 1, rate: 4000 }
+    ]
+  },
+  video: {
+    name: 'Video Editing',
+    meta: 'Edit · Post Production',
+    currency: 'EGP',
+    timeline: '2–3 weeks from footage delivery',
+    closing: 'Can\'t wait to cut this together. The raw material sounds great.',
+    items: [
+      { desc: 'Footage ingest, organization & review', qty: 1, rate: 2500 },
+      { desc: 'Rough cut & narrative structure', qty: 1, rate: 5000 },
+      { desc: 'Fine cut + 2 rounds of revisions', qty: 1, rate: 6000 },
+      { desc: 'Color grading', qty: 1, rate: 4000 },
+      { desc: 'Sound design, mixing & music selection', qty: 1, rate: 4500 },
+      { desc: 'Motion graphics, titles & lower-thirds', qty: 1, rate: 3500 },
+      { desc: 'Final delivery — multiple formats & aspect ratios', qty: 1, rate: 2000 }
+    ]
+  },
+  motion: {
+    name: 'Motion Graphics',
+    meta: 'Animation · Design',
+    currency: 'EGP',
+    timeline: '2–3 weeks from approval of styleframes',
+    closing: 'Looking forward to making this move.',
+    items: [
+      { desc: 'Concept development & moodboard', qty: 1, rate: 3000 },
+      { desc: 'Storyboard & styleframes', qty: 1, rate: 5000 },
+      { desc: 'Design system & asset preparation', qty: 1, rate: 4000 },
+      { desc: 'Animation (up to 30 seconds final duration)', qty: 1, rate: 12000 },
+      { desc: 'Sound design & music', qty: 1, rate: 3000 },
+      { desc: 'Final delivery + 2 rounds of revisions', qty: 1, rate: 2500 }
+    ]
+  },
+  film: {
+    name: 'Filmmaking & Direction',
+    meta: 'Direction · Production',
+    currency: 'EGP',
+    timeline: '4–6 weeks including production days',
+    closing: 'Looking forward to telling this story with you.',
+    items: [
+      { desc: 'Concept development & treatment', qty: 1, rate: 8000 },
+      { desc: 'Pre-production planning (casting, locations, schedule)', qty: 1, rate: 10000 },
+      { desc: 'Direction — production days', qty: 2, rate: 8000 },
+      { desc: 'Post-production supervision', qty: 1, rate: 6000 },
+      { desc: 'Color grade & sound mix supervision', qty: 1, rate: 4000 },
+      { desc: 'Final delivery & deliverables package', qty: 1, rate: 3000 }
+    ]
+  }
+};
+
+/* =========================================================
+   STATE
+   ========================================================= */
+const state = {
+  service: 'web72',
+  currency: 'USD',
+  project: { name: '', desc: '' },
+  client: { name: '', company: '', email: '' },
+  quote: {
+    number: '',
+    date: new Date().toISOString().slice(0, 10),
+    valid: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10)
+  },
+  items: [],
+  discount: 0,
+  tax: 0,
+  timeline: '',
+  payment: '50/50 — 50% upfront, 50% on delivery',
+  closing: ''
+};
+
+const CURRENCY_SYMBOL = { EGP: 'EGP', USD: '$', EUR: '€' };
+
+function formatMoney(n) {
+  const sym = CURRENCY_SYMBOL[state.currency];
+  const formatted = Number(n || 0).toLocaleString('en-US', {
+    minimumFractionDigits: state.currency === 'EGP' ? 0 : 2,
+    maximumFractionDigits: 2
+  });
+  return state.currency === 'EGP' ? `${formatted} ${sym}` : `${sym}${formatted}`;
+}
+
+/* =========================================================
+   STORAGE — works in artifact env (window.storage) and locally (localStorage)
+   ========================================================= */
+const Storage = {
+  async get(key) {
+    try {
+      if (typeof window.storage !== 'undefined' && window.storage.get) {
+        const r = await window.storage.get(key);
+        return r ? JSON.parse(r.value) : null;
+      }
+    } catch (e) { /* fall through */ }
+    try {
+      const v = localStorage.getItem(key);
+      return v ? JSON.parse(v) : null;
+    } catch (e) { return null; }
+  },
+  async set(key, value) {
+    const str = JSON.stringify(value);
+    try {
+      if (typeof window.storage !== 'undefined' && window.storage.set) {
+        return await window.storage.set(key, str);
+      }
+    } catch (e) { /* fall through */ }
+    try { localStorage.setItem(key, str); } catch (e) {}
+  },
+  async delete(key) {
+    try {
+      if (typeof window.storage !== 'undefined' && window.storage.delete) {
+        return await window.storage.delete(key);
+      }
+    } catch (e) {}
+    try { localStorage.removeItem(key); } catch (e) {}
+  },
+  async list(prefix = '') {
+    try {
+      if (typeof window.storage !== 'undefined' && window.storage.list) {
+        const r = await window.storage.list(prefix);
+        return r?.keys || [];
+      }
+    } catch (e) {}
+    try {
+      const keys = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith(prefix)) keys.push(k);
+      }
+      return keys;
+    } catch (e) { return []; }
+  }
+};
+
+/* =========================================================
+   QUOTE NUMBER GENERATION
+   ========================================================= */
+async function generateQuoteNumber() {
+  const year = new Date().getFullYear();
+  const prefix = `MV-${year}-`;
+  // Look at saved quotes to figure out the next number
+  const keys = await Storage.list('quote:');
+  let max = 0;
+  for (const k of keys) {
+    const q = await Storage.get(k);
+    if (q && q.quote && q.quote.number && q.quote.number.startsWith(prefix)) {
+      const n = parseInt(q.quote.number.slice(prefix.length), 10);
+      if (!isNaN(n) && n > max) max = n;
+    }
+  }
+  return prefix + String(max + 1).padStart(3, '0');
+}
+
+/* =========================================================
+   RENDERING — service picker
+   ========================================================= */
+function renderServicePicker() {
+  const el = document.getElementById('service-picker');
+  el.innerHTML = '';
+  Object.entries(SERVICE_TEMPLATES).forEach(([key, tpl]) => {
+    const chip = document.createElement('button');
+    chip.className = 'service-chip' + (state.service === key ? ' active' : '');
+    chip.dataset.service = key;
+    chip.innerHTML = `
+      <div class="service-chip-name">${tpl.name}</div>
+      <div class="service-chip-meta">${tpl.meta}</div>
+    `;
+    chip.onclick = () => applyServiceTemplate(key);
+    el.appendChild(chip);
+  });
+}
+
+function applyServiceTemplate(key) {
+  state.service = key;
+  const tpl = SERVICE_TEMPLATES[key];
+  // Deep-clone items
+  state.items = tpl.items.map(it => ({ ...it }));
+  // Sync currency, timeline, and closing from the template (overrides previous)
+  if (tpl.currency) state.currency = tpl.currency;
+  if (tpl.timeline) state.timeline = tpl.timeline;
+  if (tpl.closing) state.closing = tpl.closing;
+  // Reflect in form fields
+  document.getElementById('f-timeline').value = state.timeline;
+  document.getElementById('f-closing').value = state.closing;
+  document.querySelectorAll('#currency-toggle button').forEach(b => {
+    b.classList.toggle('active', b.dataset.cur === state.currency);
+  });
+  renderServicePicker();
+  renderLineItems();
+  renderTotals();
+  renderPreview();
+  showToast(`Loaded: ${tpl.name}`);
+}
+
+/* =========================================================
+   RENDERING — line items
+   ========================================================= */
+function renderLineItems() {
+  const el = document.getElementById('line-items');
+  el.innerHTML = '';
+  state.items.forEach((item, i) => {
+    const row = document.createElement('div');
+    row.className = 'line-item';
+    row.innerHTML = `
+      <textarea data-i="${i}" data-k="desc" placeholder="Description">${escapeHtml(item.desc || '')}</textarea>
+      <input class="li-qty" data-i="${i}" data-k="qty" type="number" min="0" step="0.5" value="${item.qty}">
+      <input class="li-rate" data-i="${i}" data-k="rate" type="number" min="0" step="0.01" value="${item.rate}">
+      <button class="li-remove" data-i="${i}" title="Remove">✕</button>
+    `;
+    el.appendChild(row);
+  });
+
+  // Auto-resize textareas
+  el.querySelectorAll('textarea').forEach(t => {
+    autoSize(t);
+    t.addEventListener('input', () => autoSize(t));
+  });
+
+  // Wire up changes
+  el.querySelectorAll('input, textarea').forEach(inp => {
+    inp.addEventListener('input', e => {
+      const i = parseInt(e.target.dataset.i, 10);
+      const k = e.target.dataset.k;
+      let val = e.target.value;
+      if (k === 'qty' || k === 'rate') val = parseFloat(val) || 0;
+      state.items[i][k] = val;
+      renderTotals();
+      renderPreview();
+    });
+  });
+
+  el.querySelectorAll('.li-remove').forEach(btn => {
+    btn.addEventListener('click', e => {
+      const i = parseInt(e.target.dataset.i, 10);
+      state.items.splice(i, 1);
+      renderLineItems();
+      renderTotals();
+      renderPreview();
+    });
+  });
+}
+
+function autoSize(t) {
+  t.style.height = 'auto';
+  t.style.height = (t.scrollHeight) + 'px';
+}
+
+function escapeHtml(s) {
+  return String(s || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+/* =========================================================
+   TOTALS
+   ========================================================= */
+function calcTotals() {
+  const subtotal = state.items.reduce((s, i) => s + (parseFloat(i.qty) || 0) * (parseFloat(i.rate) || 0), 0);
+  const discount = subtotal * ((parseFloat(state.discount) || 0) / 100);
+  const afterDiscount = subtotal - discount;
+  const tax = afterDiscount * ((parseFloat(state.tax) || 0) / 100);
+  const grand = afterDiscount + tax;
+  return { subtotal, discount, tax, grand };
+}
+
+function renderTotals() {
+  const t = calcTotals();
+  document.getElementById('t-subtotal').textContent = formatMoney(t.subtotal);
+  document.getElementById('t-grand').textContent = formatMoney(t.grand);
+  const rowD = document.getElementById('row-discount');
+  const rowT = document.getElementById('row-tax');
+  if (state.discount > 0) {
+    rowD.style.display = 'flex';
+    document.getElementById('t-discount').textContent = '− ' + formatMoney(t.discount);
+  } else { rowD.style.display = 'none'; }
+  if (state.tax > 0) {
+    rowT.style.display = 'flex';
+    document.getElementById('t-tax').textContent = formatMoney(t.tax);
+  } else { rowT.style.display = 'none'; }
+}
+
+/* =========================================================
+   PREVIEW — renders the actual PDF document
+   ========================================================= */
+function renderPreview() {
+  const doc = document.getElementById('quote-doc');
+  const t = calcTotals();
+  const tpl = SERVICE_TEMPLATES[state.service];
+  const projectName = state.project.name || 'Untitled Project';
+  const projectDesc = state.project.desc || '';
+  const dateFmt = formatDate(state.quote.date);
+  const validFmt = formatDate(state.quote.valid);
+  const closing = state.closing || tpl.closing;
+
+  const itemsHtml = state.items.map(it => `
+    <div class="qd-item">
+      <div class="qd-item-desc">${escapeHtml(it.desc)}</div>
+      <div class="qd-item-qty">${it.qty}</div>
+      <div class="qd-item-amt">${formatMoney((it.qty || 0) * (it.rate || 0))}</div>
+    </div>
+  `).join('');
+
+  const totalsHtml = `
+    <div class="qd-totals-row"><span>Subtotal</span><span class="val">${formatMoney(t.subtotal)}</span></div>
+    ${state.discount > 0 ? `<div class="qd-totals-row"><span>Discount (${state.discount}%)</span><span class="val">− ${formatMoney(t.discount)}</span></div>` : ''}
+    ${state.tax > 0 ? `<div class="qd-totals-row"><span>Tax / VAT (${state.tax}%)</span><span class="val">${formatMoney(t.tax)}</span></div>` : ''}
+    <div class="qd-totals-row grand"><span>Total</span><span class="val">${formatMoney(t.grand)}</span></div>
+  `;
+
+  doc.innerHTML = `
+    <div class="qd-top">
+      <div class="qd-wordmark">
+        Mitry Visuals
+        <span>Visual Artist · Cairo</span>
+      </div>
+      <div class="qd-meta">
+        <div class="qd-num">${escapeHtml(state.quote.number || 'MV-2026-—')}</div>
+        <div>Issued · ${dateFmt}</div>
+        <div>Valid until · ${validFmt}</div>
+      </div>
+    </div>
+
+    <h1 class="qd-title">Quotation</h1>
+    <div class="qd-subtitle">${escapeHtml(tpl.name)}</div>
+
+    <div class="qd-parties">
+      <div>
+        <div class="qd-party-label">Prepared For</div>
+        <div class="qd-party-name">${escapeHtml(state.client.name || 'Client Name')}</div>
+        <div class="qd-party-detail">
+          ${state.client.company ? escapeHtml(state.client.company) + '<br>' : ''}
+          ${state.client.email ? escapeHtml(state.client.email) : ''}
+        </div>
+      </div>
+      <div>
+        <div class="qd-party-label">Prepared By</div>
+        <div class="qd-party-name">Michael Mitry</div>
+        <div class="qd-party-detail">
+          Mitry Visuals<br>
+          michaelmitry13@gmail.com<br>
+          +20 100 068 0580
+        </div>
+      </div>
+    </div>
+
+    <div class="qd-project-block">
+      <div class="qd-project-label">Project</div>
+      <div class="qd-project-name">${escapeHtml(projectName)}</div>
+      ${projectDesc ? `<div class="qd-project-desc">${escapeHtml(projectDesc)}</div>` : ''}
+    </div>
+
+    <div class="qd-items">
+      <div class="qd-items-head">
+        <div>Description</div>
+        <div>Qty</div>
+        <div>Amount</div>
+      </div>
+      ${itemsHtml || '<div class="qd-item"><div class="qd-item-desc" style="color:#6b6b6b;font-style:italic;">No line items yet</div><div></div><div></div></div>'}
+    </div>
+
+    <div class="qd-totals">
+      <div class="qd-totals-box">${totalsHtml}</div>
+    </div>
+
+    <div class="qd-terms">
+      <div class="qd-terms-block">
+        <div class="qd-terms-label">Timeline</div>
+        <div class="qd-terms-val">${escapeHtml(state.timeline || 'To be confirmed at kickoff')}</div>
+      </div>
+      <div class="qd-terms-block">
+        <div class="qd-terms-label">Payment Terms</div>
+        <div class="qd-terms-val">${escapeHtml(state.payment)}</div>
+      </div>
+    </div>
+
+    ${closing ? `<div class="qd-closing">"${escapeHtml(closing)}"</div>` : ''}
+
+    <div class="qd-footer">
+      <div>Mitry Visuals · <span>mi5a.com</span></div>
+      <div>Cairo · Egypt</div>
+    </div>
+  `;
+  // Scale the preview to fit its container after re-render
+  requestAnimationFrame(scalePreview);
+}
+
+/* =========================================================
+   SCALE PREVIEW — shrinks the 595px quote-doc to fit whatever
+   width the preview pane actually has, so nothing overflows.
+   ========================================================= */
+function scalePreview() {
+  const frame   = document.querySelector('.preview-frame');
+  const doc     = document.getElementById('quote-doc');
+  if (!frame || !doc) return;
+  // Reset transform to measure true layout height
+  doc.style.transform = '';
+  const docNaturalH = doc.offsetHeight || 842;
+  const docW        = 595;
+  const pane        = frame.parentElement;
+  const paneInnerW  = pane.clientWidth - 48; // subtract 2×24px pane padding
+  const scale       = Math.min(1, paneInnerW / docW);
+  if (scale < 1) {
+    doc.style.transform = `scale(${scale})`;
+    frame.style.height  = Math.round(docNaturalH * scale) + 'px';
+  } else {
+    doc.style.transform = '';
+    frame.style.height  = '';
+  }
+  // Keep the frame itself at the right width
+  frame.style.width    = Math.min(paneInnerW, docW) + 'px';
+  frame.style.maxWidth = '595px';
+}
+
+function formatDate(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso + 'T00:00:00');
+  if (isNaN(d.getTime())) return iso;
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+/* =========================================================
+   PDF GENERATION — native jsPDF drawing (no html2canvas)
+   Text is selectable, file size is tiny, works in any sandbox.
+   ========================================================= */
+async function downloadPDF() {
+  const btn = document.getElementById('btn-pdf');
+  const origText = btn.textContent;
+  btn.textContent = 'Generating…';
+  btn.disabled = true;
+
+  try {
+    if (!window.jspdf || !window.jspdf.jsPDF) {
+      throw new Error('PDF library failed to load');
+    }
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4', compress: true });
+
+    drawQuotePDF(pdf);
+
+    const safeName = (state.client.name || 'client').replace(/[^a-z0-9]+/gi, '-').toLowerCase() || 'client';
+    const num = (state.quote.number || 'quote').replace(/[^a-z0-9-]+/gi, '') || 'quote';
+    pdf.save(`MitryVisuals_${num}_${safeName}.pdf`);
+    showToast('PDF Downloaded');
+  } catch (err) {
+    console.error(err);
+    showToast('Error: ' + (err.message || 'see console'));
+  } finally {
+    btn.textContent = origText;
+    btn.disabled = false;
+  }
+}
+
+function drawQuotePDF(pdf) {
+  // Color palette (matches mi5a.com aesthetic)
+  const C = {
+    bg:         [10, 10, 10],
+    panel:      [17, 17, 17],
+    text:       [245, 245, 240],
+    soft:       [168, 168, 163],
+    muted:      [107, 107, 107],
+    accent:     [212, 165, 116],
+    line:       [38, 38, 38],
+    lineStrong: [55, 55, 55]
+  };
+
+  const W = pdf.internal.pageSize.getWidth();
+  const H = pdf.internal.pageSize.getHeight();
+  const M = { l: 48, r: 48, t: 50, b: 60 };
+  const tpl = SERVICE_TEMPLATES[state.service];
+
+  // Helper: fill page background black
+  const paintBg = () => {
+    pdf.setFillColor(C.bg[0], C.bg[1], C.bg[2]);
+    pdf.rect(0, 0, W, H, 'F');
+  };
+
+  // Helper: check we have room; add page if not
+  const ensureSpace = (currentY, needed) => {
+    if (currentY + needed > H - M.b - 40) {
+      pdf.addPage();
+      paintBg();
+      return M.t;
+    }
+    return currentY;
+  };
+
+  paintBg();
+  let y = M.t;
+
+  // ───────── HEADER ─────────
+  pdf.setFont('times', 'italic');
+  pdf.setFontSize(22);
+  pdf.setTextColor(C.text[0], C.text[1], C.text[2]);
+  pdf.text('Mitry Visuals', M.l, y + 14);
+
+  pdf.setFont('courier', 'normal');
+  pdf.setFontSize(7);
+  pdf.setTextColor(C.muted[0], C.muted[1], C.muted[2]);
+  pdf.text('VISUAL ARTIST  ·  CAIRO', M.l, y + 26);
+
+  // Quote meta — right side
+  pdf.setFont('courier', 'bold');
+  pdf.setFontSize(10);
+  pdf.setTextColor(C.accent[0], C.accent[1], C.accent[2]);
+  pdf.text(state.quote.number || 'MV-2026-—', W - M.r, y + 8, { align: 'right' });
+
+  pdf.setFont('courier', 'normal');
+  pdf.setFontSize(7.5);
+  pdf.setTextColor(C.soft[0], C.soft[1], C.soft[2]);
+  pdf.text(`ISSUED  ·  ${formatDate(state.quote.date).toUpperCase()}`, W - M.r, y + 20, { align: 'right' });
+  pdf.text(`VALID UNTIL  ·  ${formatDate(state.quote.valid).toUpperCase()}`, W - M.r, y + 31, { align: 'right' });
+
+  y += 44;
+  pdf.setDrawColor(C.line[0], C.line[1], C.line[2]);
+  pdf.setLineWidth(0.5);
+  pdf.line(M.l, y, W - M.r, y);
+
+  y += 38;
+
+  // ───────── TITLE ─────────
+  pdf.setFont('times', 'italic');
+  pdf.setFontSize(52);
+  pdf.setTextColor(C.text[0], C.text[1], C.text[2]);
+  pdf.text('Quotation', M.l, y);
+
+  pdf.setFont('courier', 'normal');
+  pdf.setFontSize(9);
+  pdf.setTextColor(C.muted[0], C.muted[1], C.muted[2]);
+  pdf.text(tpl.name.toUpperCase(), M.l, y + 16);
+
+  y += 42;
+
+  // ───────── PARTIES (two columns) ─────────
+  const colGap = 32;
+  const colW = (W - M.l - M.r - colGap) / 2;
+  const col1X = M.l;
+  const col2X = M.l + colW + colGap;
+
+  pdf.setFont('courier', 'normal');
+  pdf.setFontSize(7);
+  pdf.setTextColor(C.muted[0], C.muted[1], C.muted[2]);
+  pdf.text('PREPARED FOR', col1X, y);
+  pdf.text('PREPARED BY', col2X, y);
+
+  y += 6;
+  pdf.setDrawColor(C.line[0], C.line[1], C.line[2]);
+  pdf.line(col1X, y, col1X + colW, y);
+  pdf.line(col2X, y, col2X + colW, y);
+
+  y += 18;
+  pdf.setFont('times', 'italic');
+  pdf.setFontSize(16);
+  pdf.setTextColor(C.text[0], C.text[1], C.text[2]);
+  pdf.text(state.client.name || 'Client Name', col1X, y);
+  pdf.text('Michael Mitry', col2X, y);
+
+  y += 14;
+
+  // Detail lines
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(9.5);
+  pdf.setTextColor(C.soft[0], C.soft[1], C.soft[2]);
+
+  let cy1 = y;
+  if (state.client.company) { pdf.text(state.client.company, col1X, cy1); cy1 += 12; }
+  if (state.client.email)   { pdf.text(state.client.email,   col1X, cy1); cy1 += 12; }
+
+  let cy2 = y;
+  pdf.text('Mitry Visuals', col2X, cy2); cy2 += 12;
+  pdf.text('michaelmitry13@gmail.com', col2X, cy2); cy2 += 12;
+  pdf.text('+20 100 068 0580', col2X, cy2); cy2 += 12;
+
+  y = Math.max(cy1, cy2) + 14;
+
+  // ───────── PROJECT BLOCK ─────────
+  const projDesc = state.project.desc || '';
+  const projDescLines = projDesc ? pdf.splitTextToSize(projDesc, W - M.l - M.r - 32) : [];
+  const projBlockH = 18 + 24 + (projDesc ? 6 + projDescLines.length * 12 : 0) + 14;
+
+  y = ensureSpace(y, projBlockH + 20);
+
+  pdf.setFillColor(C.panel[0], C.panel[1], C.panel[2]);
+  pdf.rect(M.l, y, W - M.l - M.r, projBlockH, 'F');
+  pdf.setFillColor(C.accent[0], C.accent[1], C.accent[2]);
+  pdf.rect(M.l, y, 2, projBlockH, 'F');
+
+  pdf.setFont('courier', 'normal');
+  pdf.setFontSize(7);
+  pdf.setTextColor(C.muted[0], C.muted[1], C.muted[2]);
+  pdf.text('PROJECT', M.l + 14, y + 16);
+
+  pdf.setFont('times', 'italic');
+  pdf.setFontSize(18);
+  pdf.setTextColor(C.text[0], C.text[1], C.text[2]);
+  pdf.text(state.project.name || 'Untitled Project', M.l + 14, y + 36);
+
+  if (projDesc) {
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(9.5);
+    pdf.setTextColor(C.soft[0], C.soft[1], C.soft[2]);
+    pdf.text(projDescLines, M.l + 14, y + 50);
+  }
+
+  y += projBlockH + 24;
+
+  // ───────── ITEMS TABLE ─────────
+  const qtyX = W - M.r - 150;
+  const amtX = W - M.r;
+
+  // Items header
+  y = ensureSpace(y, 30);
+  pdf.setFont('courier', 'normal');
+  pdf.setFontSize(7);
+  pdf.setTextColor(C.muted[0], C.muted[1], C.muted[2]);
+  pdf.text('DESCRIPTION', M.l, y);
+  pdf.text('QTY', qtyX, y, { align: 'right' });
+  pdf.text('AMOUNT', amtX, y, { align: 'right' });
+
+  y += 6;
+  pdf.setDrawColor(C.lineStrong[0], C.lineStrong[1], C.lineStrong[2]);
+  pdf.line(M.l, y, W - M.r, y);
+  y += 12;
+
+  // Item rows
+  state.items.forEach(item => {
+    const descLines = pdf.splitTextToSize(item.desc || '—', qtyX - M.l - 20);
+    const rowH = Math.max(descLines.length * 12, 14) + 10;
+
+    y = ensureSpace(y, rowH);
+
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(10);
+    pdf.setTextColor(C.text[0], C.text[1], C.text[2]);
+    pdf.text(descLines, M.l, y);
+
+    pdf.setFont('courier', 'normal');
+    pdf.setFontSize(10);
+    pdf.setTextColor(C.soft[0], C.soft[1], C.soft[2]);
+    pdf.text(String(item.qty || 0), qtyX, y, { align: 'right' });
+
+    pdf.setTextColor(C.text[0], C.text[1], C.text[2]);
+    pdf.text(formatMoney((item.qty || 0) * (item.rate || 0)), amtX, y, { align: 'right' });
+
+    y += rowH - 4;
+    pdf.setDrawColor(C.line[0], C.line[1], C.line[2]);
+    pdf.line(M.l, y, W - M.r, y);
+    y += 8;
+  });
+
+  y += 18;
+
+  // ───────── TOTALS BOX ─────────
+  const t = calcTotals();
+  const tbW = 240;
+  const tbX = W - M.r - tbW;
+  const totalsNeeded = 30 + (state.discount > 0 ? 16 : 0) + (state.tax > 0 ? 16 : 0) + 40;
+
+  y = ensureSpace(y, totalsNeeded);
+
+  pdf.setFont('courier', 'normal');
+  pdf.setFontSize(10);
+  pdf.setTextColor(C.soft[0], C.soft[1], C.soft[2]);
+  pdf.text('Subtotal', tbX, y);
+  pdf.setTextColor(C.text[0], C.text[1], C.text[2]);
+  pdf.text(formatMoney(t.subtotal), tbX + tbW, y, { align: 'right' });
+  y += 16;
+
+  if (state.discount > 0) {
+    pdf.setTextColor(C.soft[0], C.soft[1], C.soft[2]);
+    pdf.text(`Discount (${state.discount}%)`, tbX, y);
+    pdf.setTextColor(C.text[0], C.text[1], C.text[2]);
+    pdf.text('- ' + formatMoney(t.discount), tbX + tbW, y, { align: 'right' });
+    y += 16;
+  }
+
+  if (state.tax > 0) {
+    pdf.setTextColor(C.soft[0], C.soft[1], C.soft[2]);
+    pdf.text(`Tax / VAT (${state.tax}%)`, tbX, y);
+    pdf.setTextColor(C.text[0], C.text[1], C.text[2]);
+    pdf.text(formatMoney(t.tax), tbX + tbW, y, { align: 'right' });
+    y += 16;
+  }
+
+  y += 4;
+  pdf.setDrawColor(C.lineStrong[0], C.lineStrong[1], C.lineStrong[2]);
+  pdf.line(tbX, y, tbX + tbW, y);
+  y += 22;
+
+  pdf.setFont('times', 'italic');
+  pdf.setFontSize(22);
+  pdf.setTextColor(C.text[0], C.text[1], C.text[2]);
+  pdf.text('Total', tbX, y);
+  pdf.setTextColor(C.accent[0], C.accent[1], C.accent[2]);
+  pdf.text(formatMoney(t.grand), tbX + tbW, y, { align: 'right' });
+
+  y += 28;
+
+  // ───────── TERMS ─────────
+  y = ensureSpace(y, 80);
+
+  pdf.setDrawColor(C.line[0], C.line[1], C.line[2]);
+  pdf.line(M.l, y, W - M.r, y);
+  y += 18;
+
+  pdf.setFont('courier', 'normal');
+  pdf.setFontSize(7);
+  pdf.setTextColor(C.muted[0], C.muted[1], C.muted[2]);
+  pdf.text('TIMELINE', col1X, y);
+  pdf.text('PAYMENT TERMS', col2X, y);
+  y += 14;
+
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(10);
+  pdf.setTextColor(C.text[0], C.text[1], C.text[2]);
+  const timelineLines = pdf.splitTextToSize(state.timeline || 'To be confirmed at kickoff', colW);
+  const paymentLines  = pdf.splitTextToSize(state.payment || '', colW);
+  pdf.text(timelineLines, col1X, y);
+  pdf.text(paymentLines, col2X, y);
+  y += Math.max(timelineLines.length, paymentLines.length) * 12 + 18;
+
+  // ───────── CLOSING NOTE ─────────
+  const closing = state.closing || tpl.closing || '';
+  if (closing) {
+    const closingLines = pdf.splitTextToSize(`"${closing}"`, W - M.l - M.r - 16);
+    const closingH = closingLines.length * 14 + 8;
+    y = ensureSpace(y, closingH);
+
+    pdf.setDrawColor(C.lineStrong[0], C.lineStrong[1], C.lineStrong[2]);
+    pdf.setLineWidth(1.5);
+    pdf.line(M.l, y - 4, M.l, y + closingLines.length * 14 - 2);
+    pdf.setLineWidth(0.5);
+
+    pdf.setFont('times', 'italic');
+    pdf.setFontSize(12);
+    pdf.setTextColor(C.soft[0], C.soft[1], C.soft[2]);
+    pdf.text(closingLines, M.l + 12, y + 6);
+  }
+
+  // ───────── FOOTER (on every page) ─────────
+  const pageCount = pdf.internal.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    pdf.setPage(i);
+    pdf.setDrawColor(C.line[0], C.line[1], C.line[2]);
+    pdf.setLineWidth(0.5);
+    pdf.line(M.l, H - M.b + 14, W - M.r, H - M.b + 14);
+
+    pdf.setFont('courier', 'normal');
+    pdf.setFontSize(7);
+    pdf.setTextColor(C.muted[0], C.muted[1], C.muted[2]);
+    pdf.text('MITRY VISUALS  ·  ', M.l, H - M.b + 28);
+    const prefixW = pdf.getTextWidth('MITRY VISUALS  ·  ');
+    pdf.setTextColor(C.soft[0], C.soft[1], C.soft[2]);
+    pdf.text('MI5A.COM', M.l + prefixW, H - M.b + 28);
+
+    pdf.setTextColor(C.muted[0], C.muted[1], C.muted[2]);
+    pdf.text(`CAIRO  ·  EGYPT`, W - M.r, H - M.b + 28, { align: 'right' });
+
+    if (pageCount > 1) {
+      pdf.text(`PAGE ${i} / ${pageCount}`, W / 2, H - M.b + 28, { align: 'center' });
+    }
+  }
+}
+
+/* =========================================================
+   SAVE / LOAD
+   ========================================================= */
+async function saveQuote() {
+  if (!state.quote.number) {
+    state.quote.number = await generateQuoteNumber();
+    document.getElementById('f-quote-num').value = state.quote.number;
+  }
+  const key = `quote:${state.quote.number}`;
+  await Storage.set(key, {
+    ...state,
+    savedAt: new Date().toISOString()
+  });
+  showToast(`Saved · ${state.quote.number}`);
+  renderPreview();
+}
+
+async function openSavedDialog() {
+  const list = document.getElementById('saved-list');
+  list.innerHTML = '<div class="saved-empty">Loading…</div>';
+  document.getElementById('dlg-saved').classList.add('open');
+
+  const keys = await Storage.list('quote:');
+  if (keys.length === 0) {
+    list.innerHTML = '<div class="saved-empty">No saved quotes yet.</div>';
+    return;
+  }
+
+  const quotes = [];
+  for (const k of keys) {
+    const q = await Storage.get(k);
+    if (q) quotes.push({ key: k, data: q });
+  }
+  // Sort by savedAt desc
+  quotes.sort((a, b) => (b.data.savedAt || '').localeCompare(a.data.savedAt || ''));
+
+  list.innerHTML = '';
+  quotes.forEach(({ key, data }) => {
+    const totals = (function() {
+      const sub = (data.items || []).reduce((s, i) => s + (i.qty || 0) * (i.rate || 0), 0);
+      const disc = sub * ((data.discount || 0) / 100);
+      const afterD = sub - disc;
+      const tax = afterD * ((data.tax || 0) / 100);
+      return afterD + tax;
+    })();
+
+    const row = document.createElement('div');
+    row.className = 'saved-row';
+    const label = `${data.client?.name || 'Client'} · ${data.project?.name || 'Untitled'}`;
+    const meta = `${data.quote?.number || '—'} · ${SERVICE_TEMPLATES[data.service]?.name || data.service} · ${(data.currency === 'EGP' ? totals.toLocaleString('en-US',{maximumFractionDigits:0}) + ' EGP' : (data.currency === 'USD' ? '$' : '€') + totals.toLocaleString('en-US',{minimumFractionDigits:2, maximumFractionDigits:2}))}`;
+    row.innerHTML = `
+      <div class="saved-row-info">
+        <div class="saved-row-name">${escapeHtml(label)}</div>
+        <div class="saved-row-meta">${escapeHtml(meta)}</div>
+      </div>
+      <button class="btn-load">Load</button>
+      <button class="btn-icon btn-del" title="Delete">✕</button>
+    `;
+    row.querySelector('.btn-load').onclick = () => {
+      loadQuote(data);
+      document.getElementById('dlg-saved').classList.remove('open');
+    };
+    row.querySelector('.btn-del').onclick = async () => {
+      if (confirm(`Delete quote ${data.quote.number}?`)) {
+        await Storage.delete(key);
+        openSavedDialog();
+      }
+    };
+    list.appendChild(row);
+  });
+}
+
+function loadQuote(data) {
+  Object.assign(state, {
+    service: data.service || 'vfx',
+    currency: data.currency || 'EGP',
+    project: { ...data.project },
+    client: { ...data.client },
+    quote: { ...data.quote },
+    items: (data.items || []).map(i => ({ ...i })),
+    discount: data.discount || 0,
+    tax: data.tax || 0,
+    timeline: data.timeline || '',
+    payment: data.payment || '50/50 — 50% upfront, 50% on delivery',
+    closing: data.closing || ''
+  });
+  syncFormFromState();
+  renderServicePicker();
+  renderLineItems();
+  renderTotals();
+  renderPreview();
+  showToast(`Loaded · ${data.quote.number}`);
+}
+
+/* =========================================================
+   FORM <-> STATE SYNC
+   ========================================================= */
+function syncFormFromState() {
+  document.getElementById('f-project-name').value = state.project.name;
+  document.getElementById('f-project-desc').value = state.project.desc;
+  document.getElementById('f-client-name').value = state.client.name;
+  document.getElementById('f-client-company').value = state.client.company;
+  document.getElementById('f-client-email').value = state.client.email;
+  document.getElementById('f-quote-num').value = state.quote.number;
+  document.getElementById('f-date').value = state.quote.date;
+  document.getElementById('f-valid').value = state.quote.valid;
+  document.getElementById('f-discount').value = state.discount;
+  document.getElementById('f-tax').value = state.tax;
+  document.getElementById('f-timeline').value = state.timeline;
+  document.getElementById('f-payment').value = state.payment;
+  document.getElementById('f-closing').value = state.closing;
+  // Currency toggle
+  document.querySelectorAll('#currency-toggle button').forEach(b => {
+    b.classList.toggle('active', b.dataset.cur === state.currency);
+  });
+}
+
+function wireFormInputs() {
+  const bind = (id, path) => {
+    document.getElementById(id).addEventListener('input', e => {
+      setPath(state, path, e.target.value);
+      renderPreview();
+    });
+  };
+  bind('f-project-name', 'project.name');
+  bind('f-project-desc', 'project.desc');
+  bind('f-client-name', 'client.name');
+  bind('f-client-company', 'client.company');
+  bind('f-client-email', 'client.email');
+  bind('f-quote-num', 'quote.number');
+  bind('f-date', 'quote.date');
+  bind('f-valid', 'quote.valid');
+  bind('f-timeline', 'timeline');
+  bind('f-payment', 'payment');
+  bind('f-closing', 'closing');
+
+  document.getElementById('f-discount').addEventListener('input', e => {
+    state.discount = parseFloat(e.target.value) || 0;
+    renderTotals();
+    renderPreview();
+  });
+  document.getElementById('f-tax').addEventListener('input', e => {
+    state.tax = parseFloat(e.target.value) || 0;
+    renderTotals();
+    renderPreview();
+  });
+
+  // Currency
+  document.querySelectorAll('#currency-toggle button').forEach(b => {
+    b.addEventListener('click', () => {
+      state.currency = b.dataset.cur;
+      document.querySelectorAll('#currency-toggle button').forEach(x => x.classList.toggle('active', x === b));
+      renderTotals();
+      renderPreview();
+    });
+  });
+}
+
+function setPath(obj, path, val) {
+  const parts = path.split('.');
+  let cur = obj;
+  for (let i = 0; i < parts.length - 1; i++) cur = cur[parts[i]];
+  cur[parts[parts.length - 1]] = val;
+}
+
+/* =========================================================
+   TOAST
+   ========================================================= */
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+/* =========================================================
+   INIT
+   ========================================================= */
+async function init() {
+  // Default quote number
+  state.quote.number = await generateQuoteNumber();
+
+  // PRE-LOADED: Egygrafx website quote based on client brief
+  // (clear this by hitting Reset for a fresh blank quote)
+  state.service   = 'web72';
+  state.currency  = 'USD';
+  state.client    = { name: 'Sam', company: 'Egygrafx', email: '' };
+  state.project   = {
+    name: 'Egygrafx Corporate Website',
+    desc: 'Full multi-page B2B website for Egygrafx — a large-format printing solutions distributor serving Egypt & the Middle East. Covers 8 main sections: Home, About, Products (12+ supplier brands), Applications (9 industry categories), Solutions, Consumables, Service, and Contact.'
+  };
+  state.items = [
+    {
+      desc: 'Website in 72 Hours — base package. Custom UI/UX design, responsive mobile-first build, SEO-optimized structure, contact form & analytics, unlimited revisions, deployed on Vercel. Stack: React, HTML/CSS, Formspree, Vercel.',
+      qty: 1, rate: 300
+    },
+    {
+      desc: 'Extended multi-page architecture — 8-section navigation structure (Home, About, Products, Applications, Solutions, Consumables, Service, Contact) with consistent layout system, sub-page templates, and internal linking.',
+      qty: 1, rate: 150
+    },
+    {
+      desc: 'Supplier & brand directory pages — structured pages for 12+ supplier brands (ORIC, HP, BYDi, JHF, Monti Antonio, GBOS, DGI, LDP, MagicJet, WitColor, Infiniti, Summa, Neolt) with spec layouts and supplier links.',
+      qty: 1, rate: 120
+    },
+    {
+      desc: 'Applications & Solutions category pages — 9 industry verticals (Home Textile, T-Shirts & DTG, Carpet & Rugs, Signage & Display, Wall Covering, Outdoor Advertising, Packaging & Labeling, Automotive CAD/CAM, Promotional) with product-to-application mapping.',
+      qty: 1, rate: 100
+    },
+    {
+      desc: 'Consumables section — Inks, Paper & Film, and Spare Parts sub-pages with clean product listing layouts.',
+      qty: 1, rate: 50
+    }
+  ];
+  state.timeline = '5–7 business days from content & asset delivery';
+  state.payment  = '50/50 — 50% upfront, 50% on delivery';
+  state.closing  = 'Reviewed the full brief — the structure is clear and the scope is well-defined. Excited to build this out.';
+  state.discount = 0;
+  state.tax      = 0;
+
+  syncFormFromState();
+  renderServicePicker();
+  renderLineItems();
+  renderTotals();
+  renderPreview();
+  wireFormInputs();
+
+  // Buttons
+  document.getElementById('btn-add-line').onclick = () => {
+    state.items.push({ desc: '', qty: 1, rate: 0 });
+    renderLineItems();
+    renderTotals();
+    renderPreview();
+  };
+  document.getElementById('btn-pdf').onclick = downloadPDF;
+  document.getElementById('btn-save').onclick = saveQuote;
+  document.getElementById('btn-load').onclick = openSavedDialog;
+  document.getElementById('btn-reset').onclick = async () => {
+    if (!confirm('Reset the current quote? Unsaved changes will be lost.')) return;
+    const def = SERVICE_TEMPLATES.web72;
+    Object.assign(state, {
+      service: 'web72',
+      currency: def.currency,
+      project: { name: '', desc: '' },
+      client: { name: '', company: '', email: '' },
+      quote: {
+        number: await generateQuoteNumber(),
+        date: new Date().toISOString().slice(0, 10),
+        valid: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10)
+      },
+      items: def.items.map(i => ({ ...i })),
+      discount: 0,
+      tax: 0,
+      timeline: def.timeline,
+      payment: '50/50 — 50% upfront, 50% on delivery',
+      closing: def.closing
+    });
+    syncFormFromState();
+    renderServicePicker();
+    renderLineItems();
+    renderTotals();
+    renderPreview();
+    showToast('Reset');
+  };
+
+  document.getElementById('dlg-close').onclick = () => {
+    document.getElementById('dlg-saved').classList.remove('open');
+  };
+  document.getElementById('dlg-saved').onclick = e => {
+    if (e.target.id === 'dlg-saved') document.getElementById('dlg-saved').classList.remove('open');
+  };
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+
+</body>
+</html>
