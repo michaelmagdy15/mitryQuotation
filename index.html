@@ -914,6 +914,8 @@
           <label>Payment Terms</label>
           <select id="f-payment">
             <option value="50/50 — 50% upfront, 50% on delivery">50/50 — 50% upfront, 50% on delivery</option>
+            <option value="60/20/20 — 60% upfront, 20% halfway, 20% on delivery">60/20/20 — 60% upfront, 20% halfway, 20% on delivery</option>
+            <option value="60/10/30 — 60% upfront, 10% halfway, 30% on delivery">60/10/30 — 60% upfront, 10% halfway, 30% on delivery</option>
             <option value="30/30/40 — staged payments across project milestones">30/30/40 — staged payments</option>
             <option value="100% upfront">100% upfront</option>
             <option value="Net 15 days after delivery">Net 15 days after delivery</option>
@@ -2040,7 +2042,7 @@ async function init() {
     }
   ];
   state.timeline = '3–4 weeks from project kickoff';
-  state.payment  = '50/50 — 50% upfront, 50% on delivery';
+  state.payment  = '60/20/20 — 60% upfront, 20% halfway, 20% on delivery';
   state.closing  = 'Excited to build this educational platform with you. We will deliver the core MVP within 4 weeks and can upgrade features step-by-step.';
   state.discount = 0;
   state.tax      = 0;
