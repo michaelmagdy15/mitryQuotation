@@ -1433,7 +1433,7 @@ function renderPreview() {
     ${closing ? `<div class="qd-closing">"${escapeHtml(closing)}"</div>` : ''}
 
     <div class="qd-footer">
-      <div>Mitry Visuals · <span>mi5a.com</span></div>
+      <div>${escapeHtml(state.brandName || 'Mitry Visuals')} · <span>mi5a.com</span></div>
       <div>Cairo · Egypt</div>
     </div>
   `;
