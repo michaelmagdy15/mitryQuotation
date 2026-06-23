@@ -950,6 +950,35 @@
    Rates are starting points; everything is editable per quote
    ========================================================= */
 const SERVICE_TEMPLATES = {
+  lms_mvp: {
+    name: 'Educational Platform MVP',
+    meta: 'From 55,000 EGP',
+    currency: 'EGP',
+    timeline: '3–4 weeks from project kickoff',
+    closing: 'Excited to build this educational platform with you. We will deliver the core MVP within 4 weeks and can upgrade features step-by-step.',
+    items: [
+      {
+        desc: 'Milestone 1: Database Setup & Authentication — Supabase integration (Database schema, user tables, role management for Mentor/Student). Sign up/in screens.',
+        qty: 1,
+        rate: 15000
+      },
+      {
+        desc: 'Milestone 2: Course Catalog & Video Streaming — Student onboarding survey (3 matching questions), course listing catalog, secure video streaming with Bunny.net HLS domain-locked player.',
+        qty: 1,
+        rate: 20000
+      },
+      {
+        desc: 'Milestone 3: Quiz Engine & Top-Performers List — End-of-course multiple-choice quizzes, automatic score grading, and admin-only "Talent Roster" dashboard listing student details.',
+        qty: 1,
+        rate: 12000
+      },
+      {
+        desc: 'Milestone 4: Manual Payment Integration & Deploy — Manual Vodafone Cash & InstaPay screenshot upload flow, admin enrollment approvals tab, Vercel & Supabase deployment.',
+        qty: 1,
+        rate: 8000
+      }
+    ]
+  },
   web72: {
     name: 'Website in 72 Hours',
     meta: 'From $300 · 72hr',
@@ -1955,40 +1984,36 @@ async function init() {
   // Default quote number
   state.quote.number = await generateQuoteNumber();
 
-  // PRE-LOADED: Egygrafx website quote based on client brief
+  // PRE-LOADED: Educational Platform MVP Quote based on client brief
   // (clear this by hitting Reset for a fresh blank quote)
-  state.service   = 'web72';
-  state.currency  = 'USD';
-  state.client    = { name: 'Sam', company: 'Egygrafx', email: '' };
+  state.service   = 'lms_mvp';
+  state.currency  = 'EGP';
+  state.client    = { name: 'Client Name', company: '', email: '' };
   state.project   = {
-    name: 'Egygrafx Corporate Website',
-    desc: 'Full multi-page B2B website for Egygrafx — a large-format printing solutions distributor serving Egypt & the Middle East. Covers 8 main sections: Home, About, Products (12+ supplier brands), Applications (9 industry categories), Solutions, Consumables, Service, and Contact.'
+    name: 'Educational Platform (MVP)',
+    desc: 'An educational platform where mentors upload courses, and students subscribe. Includes a 3-question course recommendation onboarding tool, secure video streaming with Bunny.net HLS domain-locked integration, automated quizzes at course completion, manual payment gateway verification (Vodafone Cash / InstaPay receipt uploads), and a top-scorer talent list for job placement.'
   };
   state.items = [
     {
-      desc: 'Website in 72 Hours — base package. Custom UI/UX design, responsive mobile-first build, SEO-optimized structure, contact form & analytics, unlimited revisions, deployed on Vercel. Stack: React, HTML/CSS, Formspree, Vercel.',
-      qty: 1, rate: 300
+      desc: 'Milestone 1: Database Setup & Authentication — Supabase integration (Database schema, user tables, role management for Mentor/Student). Sign up/in screens.',
+      qty: 1, rate: 15000
     },
     {
-      desc: 'Extended multi-page architecture — 8-section navigation structure (Home, About, Products, Applications, Solutions, Consumables, Service, Contact) with consistent layout system, sub-page templates, and internal linking.',
-      qty: 1, rate: 150
+      desc: 'Milestone 2: Course Catalog & Video Streaming — Student onboarding survey (3 matching questions), course listing catalog, secure video streaming with Bunny.net HLS domain-locked player.',
+      qty: 1, rate: 20000
     },
     {
-      desc: 'Supplier & brand directory pages — structured pages for 12+ supplier brands (ORIC, HP, BYDi, JHF, Monti Antonio, GBOS, DGI, LDP, MagicJet, WitColor, Infiniti, Summa, Neolt) with spec layouts and supplier links.',
-      qty: 1, rate: 120
+      desc: 'Milestone 3: Quiz Engine & Top-Performers List — End-of-course multiple-choice quizzes, automatic score grading, and admin-only "Talent Roster" dashboard listing student details.',
+      qty: 1, rate: 12000
     },
     {
-      desc: 'Applications & Solutions category pages — 9 industry verticals (Home Textile, T-Shirts & DTG, Carpet & Rugs, Signage & Display, Wall Covering, Outdoor Advertising, Packaging & Labeling, Automotive CAD/CAM, Promotional) with product-to-application mapping.',
-      qty: 1, rate: 100
-    },
-    {
-      desc: 'Consumables section — Inks, Paper & Film, and Spare Parts sub-pages with clean product listing layouts.',
-      qty: 1, rate: 50
+      desc: 'Milestone 4: Manual Payment Integration & Deploy — Manual Vodafone Cash & InstaPay screenshot upload flow, admin enrollment approvals tab, Vercel & Supabase deployment.',
+      qty: 1, rate: 8000
     }
   ];
-  state.timeline = '5–7 business days from content & asset delivery';
+  state.timeline = '3–4 weeks from project kickoff';
   state.payment  = '50/50 — 50% upfront, 50% on delivery';
-  state.closing  = 'Reviewed the full brief — the structure is clear and the scope is well-defined. Excited to build this out.';
+  state.closing  = 'Excited to build this educational platform with you. We will deliver the core MVP within 4 weeks and can upgrade features step-by-step.';
   state.discount = 0;
   state.tax      = 0;
 
