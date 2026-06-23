@@ -778,7 +778,7 @@
 
 <header class="app-header">
   <div class="brand">
-    <div class="brand-mark">Mitry Visuals</div>
+    <div class="brand-mark" id="app-brand-mark">Mitry Visuals</div>
     <div class="brand-sub">Quote Builder</div>
   </div>
   <div class="actions">
@@ -830,6 +830,21 @@
         <div class="field-full">
           <label>Email / Contact</label>
           <input id="f-client-email" placeholder="client@email.com">
+        </div>
+      </div>
+    </div>
+
+    <!-- Branding -->
+    <div class="section">
+      <div class="section-label">Branding</div>
+      <div class="field-grid">
+        <div>
+          <label>Brand Name</label>
+          <input id="f-brand-name" placeholder="Mitry Visuals">
+        </div>
+        <div>
+          <label>Brand Subtitle</label>
+          <input id="f-brand-sub" placeholder="Visual Artist · Cairo">
         </div>
       </div>
     </div>
@@ -1088,6 +1103,8 @@ const SERVICE_TEMPLATES = {
    STATE
    ========================================================= */
 const state = {
+  brandName: 'Mitry Visuals',
+  brandSubtitle: 'Visual Artist · Cairo',
   service: 'web72',
   currency: 'USD',
   project: { name: '', desc: '' },
@@ -1348,8 +1365,8 @@ function renderPreview() {
   doc.innerHTML = `
     <div class="qd-top">
       <div class="qd-wordmark">
-        Mitry Visuals
-        <span>Visual Artist · Cairo</span>
+        ${escapeHtml(state.brandName || 'Mitry Visuals')}
+        <span>${escapeHtml(state.brandSubtitle || 'Visual Artist · Cairo')}</span>
       </div>
       <div class="qd-meta">
         <div class="qd-num">${escapeHtml(state.quote.number || 'MV-2026-—')}</div>
@@ -1530,12 +1547,12 @@ function drawQuotePDF(pdf) {
   pdf.setFont('times', 'italic');
   pdf.setFontSize(22);
   pdf.setTextColor(C.text[0], C.text[1], C.text[2]);
-  pdf.text('Mitry Visuals', M.l, y + 14);
+  pdf.text(state.brandName || 'Mitry Visuals', M.l, y + 14);
 
   pdf.setFont('courier', 'normal');
   pdf.setFontSize(7);
   pdf.setTextColor(C.muted[0], C.muted[1], C.muted[2]);
-  pdf.text('VISUAL ARTIST  ·  CAIRO', M.l, y + 26);
+  pdf.text((state.brandSubtitle || 'Visual Artist  ·  Cairo').toUpperCase(), M.l, y + 26);
 
   // Quote meta — right side
   pdf.setFont('courier', 'bold');
@@ -1786,8 +1803,9 @@ function drawQuotePDF(pdf) {
     pdf.setFont('courier', 'normal');
     pdf.setFontSize(7);
     pdf.setTextColor(C.muted[0], C.muted[1], C.muted[2]);
-    pdf.text('MITRY VISUALS  ·  ', M.l, H - M.b + 28);
-    const prefixW = pdf.getTextWidth('MITRY VISUALS  ·  ');
+    const brandText = (state.brandName || 'Mitry Visuals').toUpperCase() + '  ·  ';
+    pdf.text(brandText, M.l, H - M.b + 28);
+    const prefixW = pdf.getTextWidth(brandText);
     pdf.setTextColor(C.soft[0], C.soft[1], C.soft[2]);
     pdf.text('MI5A.COM', M.l + prefixW, H - M.b + 28);
 
@@ -1874,6 +1892,8 @@ async function openSavedDialog() {
 
 function loadQuote(data) {
   Object.assign(state, {
+    brandName: data.brandName || 'Mitry Visuals',
+    brandSubtitle: data.brandSubtitle || 'Visual Artist · Cairo',
     service: data.service || 'vfx',
     currency: data.currency || 'EGP',
     project: { ...data.project },
@@ -1898,6 +1918,9 @@ function loadQuote(data) {
    FORM <-> STATE SYNC
    ========================================================= */
 function syncFormFromState() {
+  document.getElementById('f-brand-name').value = state.brandName || 'Mitry Visuals';
+  document.getElementById('f-brand-sub').value = state.brandSubtitle || 'Visual Artist · Cairo';
+  document.getElementById('app-brand-mark').textContent = state.brandName || 'Mitry Visuals';
   document.getElementById('f-project-name').value = state.project.name;
   document.getElementById('f-project-desc').value = state.project.desc;
   document.getElementById('f-client-name').value = state.client.name;
@@ -1921,9 +1944,14 @@ function wireFormInputs() {
   const bind = (id, path) => {
     document.getElementById(id).addEventListener('input', e => {
       setPath(state, path, e.target.value);
+      if (id === 'f-brand-name') {
+        document.getElementById('app-brand-mark').textContent = e.target.value || 'Mitry Visuals';
+      }
       renderPreview();
     });
   };
+  bind('f-brand-name', 'brandName');
+  bind('f-brand-sub', 'brandSubtitle');
   bind('f-project-name', 'project.name');
   bind('f-project-desc', 'project.desc');
   bind('f-client-name', 'client.name');
@@ -2038,6 +2066,8 @@ async function init() {
     if (!confirm('Reset the current quote? Unsaved changes will be lost.')) return;
     const def = SERVICE_TEMPLATES.web72;
     Object.assign(state, {
+      brandName: 'Mitry Visuals',
+      brandSubtitle: 'Visual Artist · Cairo',
       service: 'web72',
       currency: def.currency,
       project: { name: '', desc: '' },
